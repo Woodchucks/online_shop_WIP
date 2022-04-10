@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %} KidART - Arts made by Children {% endblock %}
+
+{% block content %}
+    <div class="jumbotron p-3">
+        <div class="container-fluid text-center mt-5">
+            <h1>@KidART</h1>
+            <p>Buy unique Arts from the <em>most <b>creative</b> people on Earth</em> - <b>Children</b><br>
+            <em>All income is transferred to local charity</em></p>
+        </div>
+    </div>
+
+{% for pic in range(2,8) %}
+{% if pic % 2 == 0 %}
+<div class="card-group justify-content-center">
+{% endif %}
+    <div class="card mb-3 mr-3" style="max-width: 540px;">
+      <div class="row no-gutters">
+        <div class="col-md-4">
+          <img src="{{url_for('static',filename = 'images/painting_2.jpg')}}" class="card-img" alt="...">
+        </div>
+        <div class="col-md-8">
+          <div class="card-body">
+            <h5 class="card-title">Card title</h5>
+            <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
+            <a href="#" class="btn">Details</a>
+          </div>
+        </div>
+      </div>
+    </div>
+{% if pic % 2 == 1 %}
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
