@@ -23,7 +23,7 @@
               <div class="card-body">
                 <h5 class="card-title">{{ art.name }}</h5>
                 <p class="card-text">{{ art.description }}</p>
-                <a href="{{ url_for('details', id=art.id) }}" class="btn">Details</a>
+                <a href="{{ url_for('details', id=art.id, img=images[art.id-1]) }}" class="btn">Details</a>
               </div>
             </div>
           </div>

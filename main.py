@@ -1,12 +1,10 @@
-from flask import Flask, render_template, flash
+from flask import Flask, render_template, request, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 import os
-from base64 import b64encode
-import io
-from PIL import Image
-import requests
 import sqlite3
+
+images = []
 
 app = Flask(__name__)
 app.secret_key ="Secret"
@@ -34,38 +32,15 @@ def convertToBinaryData(filename):
         binaryData = file.read()
     return binaryData
 
-# new_art = Art(id=1, name="Miss Spring", description="A painting of Miss Spring, aquarell and paper items", price=24.50, image=convertToBinaryData('static/images/painting.jpg'))
-# new_art_2 = Art(name="Rabbit Home", description="Family of Rabbits", price=32.80, image=convertToBinaryData('static/images/painting.jpg'))
-# new_art_3 = Art(name="Heart", description="A big, red heart", price=20, image=convertToBinaryData('static/images/painting.jpg'))
-# new_art_4 = Art(name="Power of Friendship", description="A carton model of two people holding hands", price=28.50, image=convertToBinaryData('static/images/painting.jpg'))
-# db.session.add(new_art)
-# db.session.add(new_art_2)
-# db.session.add(new_art_3)
-# db.session.add(new_art_4)
-# db.session.commit()
+def convert_blob_to_img(data, file_name):
+    with open(file_name, 'wb') as file:
+        file.write(data)
 
-@app.route('/')
-@app.route('/index')
-def home():
-    # arts = Art.query.all()
-    # ARTS_FOLDER = os.path.join('static', 'images')
-    #
-    # app = Flask(__name__)
-    # app.config['UPLOAD_FOLDER'] = ARTS_FOLDER
-    #
-    # full_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'painting.jpg')
-    # return render_template("index.html", arts=arts, image=full_filename)
-
-    def convert_blob_to_img(data, file_name):
-        with open(file_name, 'wb') as file:
-            file.write(data)
-
+def retrieve_images_from_database():
     ARTS_FOLDER = os.path.join('static', 'images')
     app.config['UPLOAD_FOLDER'] = ARTS_FOLDER
-    arts = Art.query.all()
 
     try:
-        images_filenames = []
         connection = sqlite3.connect('arts.db')
         query = "SELECT * FROM art"
         cursor = connection.cursor()
@@ -75,7 +50,7 @@ def home():
             name = art[1]
             image = art[4]
             full_filename = os.path.join(app.config['UPLOAD_FOLDER'], f'{name}.jpg')
-            images_filenames.append(full_filename)
+            images.append(full_filename)
             convert_blob_to_img(image, full_filename)
         if len(art_records) == 0:
             print("Database empty. Please insert data before using.")
@@ -87,17 +62,38 @@ def home():
         if connection:
             connection.close()
 
-    return render_template("index.html", arts=arts, images=images_filenames)
+# new_art = Art(id=1, name="Miss Spring", description="A painting of Miss Spring, aquarell and paper items", price=24.50, image=convertToBinaryData('static/images/painting.jpg'))
+# new_art_2 = Art(name="Rabbit Home", description="Family of Rabbits", price=32.80, image=convertToBinaryData('static/images/painting.jpg'))
+# new_art_3 = Art(name="Heart", description="A big, red heart", price=20, image=convertToBinaryData('static/images/painting.jpg'))
+# new_art_4 = Art(name="Power of Friendship", description="A carton model of two people holding hands", price=28.50, image=convertToBinaryData('static/images/painting.jpg'))
+# db.session.add(new_art)
+# db.session.add(new_art_2)
+# db.session.add(new_art_3)
+# db.session.add(new_art_4)
+# db.session.commit()
 
+retrieve_images_from_database()
+
+@app.route('/')
+@app.route('/index')
+def home():
+    arts = Art.query.all()
+    # arts = Art.query.all()
+    # ARTS_FOLDER = os.path.join('static', 'images')
+    #
+    # app = Flask(__name__)
+    # app.config['UPLOAD_FOLDER'] = ARTS_FOLDER
+    #
+    # full_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'painting.jpg')
+    # return render_template("index.html", arts=arts, image=full_filename)
+
+    return render_template("index.html", arts=arts, images=images)
 
 @app.route('/details/<int:id>')
 def details(id):
-    return render_template('details.html', art_id=id)
-
-@app.route('/details/<int:id>/image')
-def art_image(id):
-    art = Art.query.get_or_404(id)
-    return app.response_class(art.image_url, mimetype='application/octet-stream')
+    art = Art.query.filter_by(id=id).first()
+    img_url = f"..\{images[0]}"
+    return render_template('details.html', art=art, img=img_url)
 
 if __name__ == '__main__':
     app.run(debug=True)
