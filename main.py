@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, flash, session
 from flask_bootstrap import Bootstrap
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy, inspect
 import os
 import sqlite3
 
@@ -13,13 +13,13 @@ Bootstrap(app)
 app.config ['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///arts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
 class Art(db.Model):
     id = db.Column('art_id', db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True)
     description = db.Column(db.String(10000))
     price = db.Column(db.Float)
     image = db.Column(db.LargeBinary)
-    # image_url = db.Column(db.String(1000))
 
 def __init__(self, name, price):
     self.name = name
@@ -62,6 +62,13 @@ def retrieve_images_from_database():
         if connection:
             connection.close()
 
+def MergeDict(dict1, dict2):
+    if isinstance(dict1, list) and isinstance(dict2, list):
+        return dict1 + dict2
+    if isinstance(dict1, dict) and isinstance(dict2, dict):
+        return dict(list(dict1.items()) + list(dict2.items()))
+    return False
+
 # new_art = Art(id=1, name="Miss Spring", description="A painting of Miss Spring, aquarell and paper items", price=24.50, image=convertToBinaryData('static/images/painting.jpg'))
 # new_art_2 = Art(name="Rabbit Home", description="Family of Rabbits", price=32.80, image=convertToBinaryData('static/images/painting.jpg'))
 # new_art_3 = Art(name="Heart", description="A big, red heart", price=20, image=convertToBinaryData('static/images/painting.jpg'))
@@ -94,6 +101,33 @@ def details(id):
     art = Art.query.filter_by(id=id).first()
     img_url = f"..\{images[0]}"
     return render_template('details.html', art=art, img=img_url)
+
+@app.route('/addcart', methods=['POST'])
+def add_to_cart():
+    try:
+        art_id = request.form.get('art_id')
+        art = Art.query.filter_by(id=art_id).first()
+        if art_id and request.method == "POST":
+            ArtDetails = {
+                art_id: {
+                    "name": art.name,
+                    "price": art.price,
+                    "image": art.image
+                }
+            }
+            if 'Shoppingcart' in session:
+                if art_id in session['Shoppingcart']:
+                    flash("This item is already in your shopping basket. "
+                          "Remember, all arts on this website are unique and awsome :D")
+                session['Shoppingcart'] = MergeDict(session['Shoppingcart'], ArtDetails)
+                return redirect(request.referrer)
+            else:
+                session['Shoppingcart'] = ArtDetails
+                return redirect(request.referrer)
+    except Exception as e:
+        print(e)
+    finally:
+        return redirect(request.referrer)
 
 if __name__ == '__main__':
     app.run(debug=True)
