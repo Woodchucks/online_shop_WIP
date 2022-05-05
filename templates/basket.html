@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %} Your Shopping Bag {% endblock %}
+{% block content %}
+{% for item in items_in_basket %}
+<div class="container mt-5 pt-5">
+    <h2>{{ items_in_basket[item].name }}: {{ items_in_basket[item].price }} zł</h2>
+</div>
+{% endfor %}
+<div class="container mt-5 pt-5">
+    <h2>Total: {{ total_price }} zł</h2>
+</div>
+{% endblock %}

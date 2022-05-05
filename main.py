@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, redirect, flash, session
 from flask_bootstrap import Bootstrap
-from flask_sqlalchemy import SQLAlchemy, inspect
-import os
+from flask_sqlalchemy import SQLAlchemy
+from datetime import timedelta
+import os, ast
 import sqlite3
 
 images = []
@@ -13,6 +14,13 @@ Bootstrap(app)
 app.config ['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///arts.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+app.config['SESSION_PERMANENT'] = True
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+
+# max nr of items stored before session deleted partly
+app.config['SESSION_FILE_THRESHOLD'] = 100
 
 class Art(db.Model):
     id = db.Column('art_id', db.Integer, primary_key=True)
@@ -112,7 +120,6 @@ def add_to_cart():
                 art_id: {
                     "name": art.name,
                     "price": art.price,
-                    "image": art.image
                 }
             }
             if 'Shoppingcart' in session:
@@ -128,6 +135,17 @@ def add_to_cart():
         print(e)
     finally:
         return redirect(request.referrer)
+
+@app.route('/basket', methods=['POST'])
+def buy_items():
+    if request.method == "POST":
+        total_price = 0
+        items_in_basket = request.form.get('items_in_basket')
+        items_in_basket_dict = ast.literal_eval(items_in_basket)
+        for item in items_in_basket_dict:
+            price = items_in_basket_dict[item]['price']
+            total_price += float(price)
+    return render_template('basket.html', items_in_basket=items_in_basket_dict, total_price=total_price)
 
 if __name__ == '__main__':
     app.run(debug=True)
